@@ -1,14 +1,36 @@
-version: '3.3'
 services:
+    actual_server:
+        image: docker.io/actualbudget/actual-server:latest
+        container_name: actual_server
+        ports:
+            - '5006:5006'
+        # environment:
+          # - ACTUAL_HTTPS_KEY=/data/selfhost.key
+          # - ACTUAL_HTTPS_CERT=/data/selfhost.crt
+        volumes:
+            - ./actual-data:/data
+        networks:
+            - actual_local_network
+    
     actual-http-api:
         container_name: actualhttpapi
-        volumes:
-            - './data:/data:rw'
+        build:
+            context: .
+            dockerfile: Dockerfile
+        depends_on:
+            - actual_server
+        image: local-actual-http-api:latest
         ports:
             - '5007:5007'
         environment:
-            - 'ACTUAL_SERVER_URL=http://localhost:5006/'
-            - 'ACTUAL_SERVER_PASSWORD=my-actual-server-password'
-            - 'API_KEY=my-strong-api-key'
-        restart: on-failure
-        image: jhonderson/actual-http-api:latest
+            - ACTUAL_SERVER_URL=http://actual_server:5006/
+            - ACTUAL_SERVER_PASSWORD=test
+            - API_KEY=test
+        volumes:
+            - './data:/data:rw'
+        networks:
+            - actual_local_network
+  
+networks:
+  actual_local_network:
+    external: true
